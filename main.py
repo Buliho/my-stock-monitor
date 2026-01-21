@@ -3,7 +3,7 @@ import requests
 import pandas as pd
 
 # 1. 設定你的 TOKEN
-LINE_ACCESS_TOKEN = 'v7mexuCquVm6oDXBZrM2kkiJbGLvDTA8IYSRRIL5555WO2PTGcTJ/OtafkjPMCGC2LrIBNgOShtj+K/Py1GSHnFHyFwy/E5n6XXTmNnlP2/MlODQXiQvpZPnzh765N7D1tBKwbhpEQiXXaDennFhzgdB04t89/1O/w1cDnyilFU='
+LINE_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 
 # 2. 你的類 ETF 名單
 stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ"]
