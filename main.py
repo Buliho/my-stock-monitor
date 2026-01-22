@@ -47,6 +47,32 @@ def get_signals():
         elif curr_rsi > 75:
             sell_list.append(f"🟡 {symbol} RSI過熱({curr_rsi:.1f}) 建議分批獲利")
 
+
+
+
+# --- 這裡加入 MACD 計算邏輯 ---
+        exp1 = df['Close'].ewm(span=12, adjust=False).mean()
+        exp2 = df['Close'].ewm(span=26, adjust=False).mean()
+        df['MACD'] = exp1 - exp2
+        df['Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
+        
+        # 判斷金叉/死叉 (取最後兩天比較)
+        last_macd = df['MACD'].iloc[-1].values[0] # 避免 yfinance 回傳 Series 格式
+        last_signal = df['Signal'].iloc[-1].values[0]
+        prev_macd = df['MACD'].iloc[-2].values[0]
+        prev_signal = df['Signal'].iloc[-2].values[0]
+    
+        if prev_macd < prev_signal and last_macd > last_signal:
+            macd_status = "🚀 金叉 (趨勢轉強)"
+        elif prev_macd > prev_signal and last_macd < last_signal:
+            macd_status = "⚠️ 死叉 (趨勢轉弱)"
+        else:
+            macd_status = "多頭排列" if last_macd > last_signal else "空頭排列"
+    
+
+
+    
+    
     return buy_list, sell_list
 
 def send_line(msg):
