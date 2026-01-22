@@ -15,6 +15,7 @@ stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ","VRT"]
 def get_signals():
     buy_list = []
     sell_list = []
+    macd_details = []  # 建立儲存 MACD 狀態的清單
     
     for symbol in stocks:
         # 抓取最近 60 天的資料
@@ -68,12 +69,10 @@ def get_signals():
             macd_status = "⚠️ 死叉 (趨勢轉弱)"
         else:
             macd_status = "多頭排列" if last_macd > last_signal else "空頭排列"
-    
 
-
+        macd_details.append(f"● {symbol}: {macd_status}")
     
-    
-    return buy_list, sell_list
+    return buy_list, sell_list, macd_details
 
 def send_line(msg):
     url = 'https://api.line.me/v2/bot/message/broadcast'
@@ -91,3 +90,8 @@ if buy or sell:
     print("報告已傳送！")
 else:
     print("今日盤勢穩健，無觸發訊號。")
+    
+# 第二個通知：MACD 趨勢報告 (無論有無買賣點都發送)
+macd_report = "📊 MACD 全球趨勢追蹤：\n\n" + "\n".join(macd_list)
+send_line(macd_report)
+print("MACD 趨勢報告已傳送！")
