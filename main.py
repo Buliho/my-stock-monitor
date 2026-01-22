@@ -58,10 +58,10 @@ def get_signals():
         df['Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
         
         # 判斷金叉/死叉 (取最後兩天比較)
-        last_macd = df['MACD'].iloc[-1].values[0] # 避免 yfinance 回傳 Series 格式
-        last_signal = df['Signal'].iloc[-1].values[0]
-        prev_macd = df['MACD'].iloc[-2].values[0]
-        prev_signal = df['Signal'].iloc[-2].values[0]
+        last_macd = float(df['MACD'].iloc[-1])
+        last_signal = float(df['Signal'].iloc[-1])
+        prev_macd = float(df['MACD'].iloc[-2])
+        prev_signal = float(df['Signal'].iloc[-2])
     
         if prev_macd < prev_signal and last_macd > last_signal:
             macd_status = "🚀 金叉 (趨勢轉強)"
@@ -81,7 +81,7 @@ def send_line(msg):
     requests.post(url, json=payload, headers=headers)
 
 # 執行監控
-buy, sell = get_signals()
+buy, sell, macd_list = get_signals()
 if buy or sell:
     report = "【⚡電力核能監控報告】\n\n"
     if buy: report += "📈 潛在加碼點：\n" + "\n".join(buy) + "\n\n"
