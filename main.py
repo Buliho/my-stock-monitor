@@ -3,11 +3,14 @@ import yfinance as yf
 import requests
 import pandas as pd
 
+# 2026/01/22
+# Strategy: check MA20 and RSI, if price close to MA20 and RSI~50 --> Buy signal; if price<MA20 and RSI>75 --> Sell
+
 # 1. 設定你的 TOKEN
 LINE_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 
 # 2. 你的類 ETF 名單
-stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ"]
+stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ","VRT"]
 
 def get_signals():
     buy_list = []
