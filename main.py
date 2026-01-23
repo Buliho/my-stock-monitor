@@ -82,30 +82,30 @@ def get_stock_analysis_report(tickers):
     
     for ticker in tickers:
         try:
+            # 抓取數據
             df = yf.download(ticker, period="6mo", interval="1d", progress=False)
             
-            # 修正 1：處理 yfinance 的 MultiIndex 欄位結構
+            if df.empty:
+                continue
+                
+            # 修正 1：處理 yfinance 的 MultiIndex，確保能正確選取 'Close' 欄位
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             
-            # 確保資料不為空
-            if df.empty:
-                continue
-
             close_price = df['Close'].dropna()
             rsi_series = ta.rsi(close_price, length=14)
             macd_df = ta.macd(close_price, fast=12, slow=26, signal=9)
             
-            # 修正 2：使用 .item() 或 .values[0] 確保獲取純數值，避免 TypeError
-            # 獲取 MACD 柱狀圖 (Histogram) 的最後兩個數值
-            h_now = float(macd_df.iloc[-1, 2])
-            h_prev = float(macd_df.iloc[-2, 2])
-            
-            # 獲取最新收盤價與 RSI 數值
-            latest_price = float(close_price.iloc[-1].item()) 
+            # 修正 2：使用 .iloc[-1].item() 確保提取純數字數值
+            # item() 是將單一元素的 Series 轉為 Python 標量（如 float）的標準做法
+            latest_price = float(close_price.iloc[-1].item())
             latest_rsi = float(rsi_series.iloc[-1].item())
-
-            # 判斷趨勢燈號 (沿用您的邏輯)
+            
+            # 提取 MACD 柱狀圖 (Histogram) 最後兩個數值
+            h_now = float(macd_df.iloc[-1, 2].item())
+            h_prev = float(macd_df.iloc[-2, 2].item())
+            
+            # 判斷趨勢燈號
             if h_now > 0:
                 trend = "🟢強勢" if h_now > h_prev else "🟡衰竭"
             else:
@@ -114,9 +114,9 @@ def get_stock_analysis_report(tickers):
             report += f"\n【{ticker}】 ${latest_price:.2f}\n"
             report += f"指標: RSI {latest_rsi:.1f} | MACD {trend}\n"
             
-            # 交叉偵測 (修正為數值比較)
-            m_now, s_now = macd_df.iloc[-1, 0], macd_df.iloc[-1, 1]
-            m_prev, s_prev = macd_df.iloc[-2, 0], macd_df.iloc[-2, 1]
+            # 交叉偵測
+            m_now, s_now = macd_df.iloc[-1, 0].item(), macd_df.iloc[-1, 1].item()
+            m_prev, s_prev = macd_df.iloc[-2, 0].item(), macd_df.iloc[-2, 1].item()
             
             if m_now > s_now and m_prev < s_prev:
                 report += "🚀 訊號: 出現黃金交叉！\n"
