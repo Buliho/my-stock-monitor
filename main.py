@@ -2,6 +2,7 @@ import os
 import yfinance as yf
 import requests
 import pandas as pd
+import pandas_ta as ta
 
 # 2026/01/22
 # Strategy: check MA20 and RSI, if price close to MA20 and RSI~50 --> Buy signal; if price<MA20 and RSI>75 --> Sell
@@ -11,6 +12,8 @@ LINE_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 
 # 2. 你的類 ETF 名單
 stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ","VRT"]
+
+tickers = ["LEU","OKLO","GEV","BWXT"]
 
 def get_signals():
     buy_list = []
@@ -73,7 +76,47 @@ def get_signals():
         macd_details.append(f"● {symbol}: {macd_status}")
     
     return buy_list, sell_list, macd_details
+# ------------------------------------------------------------------------------------------------------
+def get_stock_analysis_report(tickers):
+    report = "\n📊 每日技術追蹤\n"
+    
+    for ticker in tickers:
+        try:
+            df = yf.download(ticker, period="6mo", interval="1d", progress=False)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            
+            close_price = df['Close'].dropna()
+            rsi = ta.rsi(close_price, length=14)
+            macd_df = ta.macd(close_price, fast=12, slow=26, signal=9)
+            
+            h_now = float(macd_df.iloc[-1, 2])
+            h_prev = float(macd_df.iloc[-2, 2])
+            latest_price = float(close_price.iloc[-1])
+            latest_rsi = float(rsi.iloc[-1])
+            
+            # 判斷趨勢燈號
+            if h_now > 0:
+                trend = "🟢強勢" if h_now > h_prev else "🟡衰竭"
+            else:
+                trend = "⚪反彈" if h_now > h_prev else "🔴殺盤"
+            
+            report += f"\n【{ticker}】 ${latest_price:.2f}\n"
+            report += f"指標: RSI {latest_rsi:.1f} | MACD {trend}\n"
+            
+            # 交叉偵測
+            if macd_df.iloc[-1, 0] > macd_df.iloc[-1, 1] and macd_df.iloc[-2, 0] < macd_df.iloc[-2, 1]:
+                report += "🚀 訊號: 出現黃金交叉！\n"
+            elif macd_df.iloc[-1, 0] < macd_df.iloc[-1, 1] and macd_df.iloc[-2, 0] > macd_df.iloc[-2, 1]:
+                report += "⚠️ 警示: 出現死亡交叉！\n"
+                
+        except Exception as e:
+            report += f"\n【{ticker}】 分析出錯: {e}\n"
+            
+    return report
 
+
+# ------------------------------------------------------------------------------------------------------
 def send_line(msg):
     url = 'https://api.line.me/v2/bot/message/broadcast'
     headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {LINE_ACCESS_TOKEN}'}
@@ -95,3 +138,8 @@ else:
 macd_report = "📊 MACD 全球趨勢追蹤：\n\n" + "\n".join(macd_list)
 send_line(macd_report)
 print("MACD 趨勢報告已傳送！")
+
+# 第三個通知：VOL/MACD/RSI 相關資訊
+msg = get_stock_analysis_report(tickers)
+send_line_notify(msg)
+
