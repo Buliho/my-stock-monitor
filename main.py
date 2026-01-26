@@ -11,9 +11,9 @@ import pandas_ta as ta
 LINE_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 
 # 2. 你的類 ETF 名單
-stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ","VRT"]
+stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ","VRT","CRDO","ALAB","ASTS"]
 
-tickers = ["LEU","OKLO","GEV","BWXT"]
+tickers = ["LEU","OKLO","GEV","BWXT","UUUU","ASTS"]
 
 def get_signals():
     buy_list = []
@@ -100,6 +100,11 @@ def get_stock_analysis_report(tickers):
             close_price = df['Close'].dropna()
             rsi_series = ta.rsi(close_price, length=14)
             macd_df = ta.macd(close_price, fast=12, slow=26, signal=9)
+            # macd_df is a Dataframe, like
+            # Date (索引)	MACD_12_26_9 (快線)	MACDs_12_26_9 (訊號線)	MACDh_12_26_9 (柱狀圖)
+            # 2026-01-21	10.55	9.80	0.75
+            # 2026-01-22	10.68	9.95	0.73
+            # 2026-01-23	10.74	10.10	0.64
             
             # 修正 2：使用 .iloc[-1].item() 確保提取的是「純純的數字」
             # 這能解決 image_4597cc.png 中顯示的 TypeError
@@ -110,7 +115,7 @@ def get_stock_analysis_report(tickers):
             h_now = float(macd_df.iloc[-1, 2].item())
             h_prev = float(macd_df.iloc[-2, 2].item())
             
-            # 判斷趨勢燈號
+            # 判斷趨勢燈號, histogram >0
             if h_now > 0:
                 trend = "🟢強勢" if h_now > h_prev else "🟡衰竭"
             else:
