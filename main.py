@@ -18,64 +18,71 @@ tickers = ["LEU","OKLO","GEV","BWXT"]
 def get_signals():
     buy_list = []
     sell_list = []
-    macd_details = []  # 建立儲存 MACD 狀態的清單
+    macd_details = [] # 建立儲存 MACD 狀態的清單
     
     for symbol in stocks:
-        # 抓取最近 60 天的資料
-        df = yf.download(symbol, period="60d", progress=False)
-        if df.empty: continue
-        
-        # 計算技術指標
-        close = df['Close']
-        ma20 = close.rolling(window=20).mean() # 20日均線 (月線)
-        
-        # 計算 RSI (14天)
-        delta = close.diff()
-        gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        
-        curr_p = float(close.iloc[-1])
-        curr_ma20 = float(ma20.iloc[-1])
-        curr_rsi = float(rsi.iloc[-1])
-        
-        # --- 設定判斷邏輯 ---
-        # 買進條件：回測到月線附近 且 RSI 不過高
-        if curr_p <= curr_ma20 * 1.02 and curr_rsi < 50:
-            buy_list.append(f"🟢 {symbol} 回檔至月線(RSI:{curr_rsi:.1f})")
+        try:
+            # 抓取最近 60 天的資料
+            df = yf.download(symbol, period="60d", progress=False)
+            if df.empty: continue
             
-        # 賣出/減碼條件：跌破月線 或 RSI 過熱(>75)
-        elif curr_p < curr_ma20:
-            sell_list.append(f"🔴 {symbol} 跌破月線(趨勢轉弱)")
-        elif curr_rsi > 75:
-            sell_list.append(f"🟡 {symbol} RSI過熱({curr_rsi:.1f}) 建議分批獲利")
-
-
-
-
-# --- 這裡加入 MACD 計算邏輯 ---
-        exp1 = df['Close'].ewm(span=12, adjust=False).mean()
-        exp2 = df['Close'].ewm(span=26, adjust=False).mean()
-        df['MACD'] = exp1 - exp2
-        df['Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
-        
-        # 判斷金叉/死叉 (取最後兩天比較)
-        last_macd = float(df['MACD'].iloc[-1])
-        last_signal = float(df['Signal'].iloc[-1])
-        prev_macd = float(df['MACD'].iloc[-2])
-        prev_signal = float(df['Signal'].iloc[-2])
-    
-        if prev_macd < prev_signal and last_macd > last_signal:
-            macd_status = "🚀 金叉 (趨勢轉強)"
-        elif prev_macd > prev_signal and last_macd < last_signal:
-            macd_status = "⚠️ 死叉 (趨勢轉弱)"
-        else:
-            macd_status = "多頭排列" if last_macd > last_signal else "空頭排列"
-
-        macd_details.append(f"● {symbol}: {macd_status}")
-    
+            # --- 修正 1：處理 yfinance 的多層索引 ---
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+                
+            close = df['Close']
+            ma20 = close.rolling(window=20).mean() # 20日均線
+            
+            # 計算 RSI (14天)
+            delta = close.diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss
+            rsi = 100 - (100 / (1 + rs))
+            
+            # --- 修正 2：使用 .item() 獲取純數字，解決 TypeError ---
+            curr_p = float(close.iloc[-1].item())
+            curr_ma20 = float(ma20.iloc[-1].item())
+            curr_rsi = float(rsi.iloc[-1].item())
+            
+            # 設定判斷邏輯
+            if curr_p <= curr_ma20 * 1.02 and curr_rsi < 50:
+                buy_list.append(f"🟢 {symbol} 回檔至月線(RSI:{curr_rsi:.1f})")
+            elif curr_p < curr_ma20:
+                sell_list.append(f"🔴 {symbol} 跌破月線(趨勢轉弱)")
+            elif curr_rsi > 75:
+                sell_list.append(f"🟡 {symbol} RSI過熱({curr_rsi:.1f}) 建議分批獲利")
+                
+            # --- MACD 計算邏輯 ---
+            exp1 = close.ewm(span=12, adjust=False).mean()
+            exp2 = close.ewm(span=26, adjust=False).mean()
+            macd_line = exp1 - exp2
+            signal_line = macd_line.ewm(span=9, adjust=False).mean()
+            
+            # --- 修正 3：MACD 取值也要補上 .item() ---
+            last_macd = float(macd_line.iloc[-1].item())
+            last_signal = float(signal_line.iloc[-1].item())
+            prev_macd = float(macd_line.iloc[-2].item())
+            prev_signal = float(signal_line.iloc[-2].item())
+            
+            if prev_macd < prev_signal and last_macd > last_signal:
+                macd_status = "🚀 金叉 (趨勢轉強)"
+            elif prev_macd > prev_signal and last_macd < last_signal:
+                macd_status = "⚠️ 死叉 (趨勢轉弱)"
+            else:
+                macd_status = "多頭排列" if last_macd > last_signal else "空頭排列"
+            
+            macd_details.append(f"• {symbol}: {macd_status}")
+            
+        except Exception as e:
+            print(f"處理 {symbol} 時發生錯誤: {e}")
+            continue
+            
     return buy_list, sell_list, macd_details
+
+
+
+
 # ------------------------------------------------------------------------------------------------------
 def get_stock_analysis_report(tickers):
     report = "\n📊 每日技術追蹤\n"
