@@ -82,13 +82,11 @@ def get_stock_analysis_report(tickers):
     
     for ticker in tickers:
         try:
-            # 抓取數據
+            # 抓取資料
             df = yf.download(ticker, period="6mo", interval="1d", progress=False)
+            if df.empty: continue
             
-            if df.empty:
-                continue
-                
-            # 修正 1：處理 yfinance 的 MultiIndex，確保能正確選取 'Close' 欄位
+            # 修正 1：處理 yfinance 的多層索引 (Multi-Index)
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             
@@ -96,12 +94,12 @@ def get_stock_analysis_report(tickers):
             rsi_series = ta.rsi(close_price, length=14)
             macd_df = ta.macd(close_price, fast=12, slow=26, signal=9)
             
-            # 修正 2：使用 .iloc[-1].item() 確保提取純數字數值
-            # item() 是將單一元素的 Series 轉為 Python 標量（如 float）的標準做法
-            latest_price = float(close_price.iloc[-1].item())
+            # 修正 2：使用 .iloc[-1].item() 確保提取的是「純純的數字」
+            # 這能解決 image_4597cc.png 中顯示的 TypeError
+            latest_p = float(close_price.iloc[-1].item())
             latest_rsi = float(rsi_series.iloc[-1].item())
             
-            # 提取 MACD 柱狀圖 (Histogram) 最後兩個數值
+            # 獲取 MACD 柱狀圖 (通常是第三個欄位)
             h_now = float(macd_df.iloc[-1, 2].item())
             h_prev = float(macd_df.iloc[-2, 2].item())
             
@@ -111,10 +109,10 @@ def get_stock_analysis_report(tickers):
             else:
                 trend = "⚪反彈" if h_now > h_prev else "🔴殺盤"
             
-            report += f"\n【{ticker}】 ${latest_price:.2f}\n"
+            report += f"\n【{ticker}】 ${latest_p:.2f}\n"
             report += f"指標: RSI {latest_rsi:.1f} | MACD {trend}\n"
             
-            # 交叉偵測
+            # 交叉訊號判定 (同樣使用 .item())
             m_now, s_now = macd_df.iloc[-1, 0].item(), macd_df.iloc[-1, 1].item()
             m_prev, s_prev = macd_df.iloc[-2, 0].item(), macd_df.iloc[-2, 1].item()
             
@@ -124,11 +122,9 @@ def get_stock_analysis_report(tickers):
                 report += "⚠️ 警示: 出現死亡交叉！\n"
                 
         except Exception as e:
-            report += f"\n【{ticker}】 分析出錯: {str(e)}\n"
+            report += f"\n【{ticker}】 分析失敗: {str(e)}\n"
             
     return report
-
-
 # ------------------------------------------------------------------------------------------------------
 def send_line(msg):
     url = 'https://api.line.me/v2/bot/message/broadcast'
