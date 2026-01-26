@@ -157,5 +157,5 @@ print("MACD 趨勢報告已傳送！")
 
 # 第三個通知：VOL/MACD/RSI 相關資訊
 msg = get_stock_analysis_report(tickers)
-send_line_notify(msg)
+send_line(msg)
 
