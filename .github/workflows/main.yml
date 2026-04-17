@@ -1,4 +1,28 @@
-run: |
-  # 測試期間強迫跑抓圖程式
-  python chart_pusher.py
-  # python main.py
+name: Daily Stock Monitor
+
+on:
+  workflow_dispatch: # 允許手動按鈕執行測試
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install selenium webdriver-manager
+
+      - name: Run Test Screenshot
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: |
+          echo "正在測試強制執行抓圖程式..."
+          python chart_pusher.py
