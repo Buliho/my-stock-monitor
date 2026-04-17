@@ -1,41 +1,4 @@
-name: Daily Stock Monitor
-
-on:
-  schedule:
-    # 台灣清晨 5 點 (美股收盤訊號)
-    - cron: '0 21 * * *'
-    # 台灣下午 4 點 (台股籌碼圖表) -> UTC 早上 8 點
-    - cron: '0 8 * * *'
-  workflow_dispatch: # 允許手動執行
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          # 額外安裝抓圖需要的工具
-          pip install selenium webdriver-manager
-
-      - name: Run Appropriate Script
-        env:
-          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
-        run: |
-          # 取得目前 UTC 小時數
-          HOUR=$(date +%H)
-          if [ "$HOUR" -eq "08" ]; then
-            echo "正在抓取下午 4 點籌碼圖..."
-            python chart_pusher.py
-          else
-            echo "正在跑清晨美股訊號..."
-            python main.py
-          fi
+run: |
+  # 測試期間強迫跑抓圖程式
+  python chart_pusher.py
+  # python main.py
