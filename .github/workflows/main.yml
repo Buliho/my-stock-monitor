@@ -1,5 +1,13 @@
 name: Daily Stock Monitor
 
+
+- name: Install dependencies
+        run: |
+          # 安裝 Chrome 運行的必要系統依賴
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 libgbm1
+          pip install requests selenium webdriver-manager
+
 on:
   workflow_dispatch: # 保留這個，讓你可以手動點按鈕測試
 
