@@ -9,7 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 
 # ---- 設定目標網址與截圖路徑 ----
-TARGET_URL = "https://你要截圖的網址"   # <-- 改成你的目標網址
+TARGET_URL = "https://www.wantgoo.com/futures/retail-indicator/wtm&"   # <-- 改成你的目標網址
 SCREENSHOT_PATH = "/tmp/chart_screenshot.png"
 
 def capture_screenshot(url, save_path):
