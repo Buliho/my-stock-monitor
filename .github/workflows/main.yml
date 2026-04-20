@@ -2,11 +2,11 @@ name: Daily Stock Monitor
 
 on:
   schedule:
-    # 台灣清晨 05:32 (UTC 21:32) - 接收美股收盤數據
+    # 台灣清晨 05:32 (UTC 21:32) - 接收美股盤後數據
     - cron: '32 21 * * *'
-    # 台灣下午 16:00 (UTC 08:00) - 接收美股盤前/數據更新
+    # 台灣下午 16:00 (UTC 08:00) - 接收美股盤前/數據更新 + 截圖
     - cron: '0 8 * * *'
-  workflow_dispatch: 
+  workflow_dispatch:        # 允許手動測試
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -14,6 +14,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,12 +26,16 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests yfinance pandas pandas_ta
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          python -m pip install --upgrade pip
+          pip install requests yfinance pandas pandas_ta playwright
+          playwright install chromium --with-deps
 
-      - name: Run Stock Monitor
+      - name: Run Stock Monitor (原本的數字提醒)
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
-        run: |
-          # 恢復為單一執行原本的 main.py
-          python main.py
+        run: python main.py
+
+      - name: 每日下午四點截取微台指散戶多空比圖表
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: python wantgoo_screenshot.py
