@@ -2,9 +2,14 @@ name: Daily Stock Monitor
 
 on:
   schedule:
-    - cron: '32 0 * * *' # 台灣 08:32
-    - cron: '0 8 * * *'  # 台灣 16:00
-  workflow_dispatch: 
+    # 台灣上午 09:20 (UTC 01:20) - 您的測試時間
+    - cron: '20 1 * * *'
+    # 台灣下午 16:00 (UTC 08:00) - 原本的下午收盤時段
+    - cron: '0 8 * * *'
+  workflow_dispatch: # 保留手動按鈕以便立刻測試
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -20,26 +25,27 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # 1. 安裝系統組件 (解決截圖閃退)
+          # 安裝 Chrome 執行所需的底層組件，避免 Selenium 崩潰
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 libgbm1
           
-          # 2. 強制安裝所有必要套件 (解決 yfinance 缺失)
+          # 安裝必要套件
           pip install requests selenium webdriver-manager yfinance pandas pandas_ta
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Run Appropriate Script
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
+          # 取得目前 UTC 小時數
           HOUR=$(date +%H)
           echo "目前的 UTC 小時為: $HOUR"
           
-          # 判斷：如果是台灣早上 8 點 (UTC 00) 或下午 4 點 (UTC 08)
-          if [ "$HOUR" -eq "00" ] || [ "$HOUR" -eq "08" ]; then
-            echo "啟動台股籌碼抓圖任務..."
+          # 修正判斷邏輯：
+          # 如果是 UTC 01 點 (台灣 09:00 時段) 或 UTC 08 點 (台灣 16:00 時段)
+          if [ "$HOUR" -eq "01" ] || [ "$HOUR" -eq "08" ]; then
+            echo "符合預設時段，啟動台股籌碼抓圖任務..."
             python chart_pusher.py
           else
-            echo "執行美股掃描任務..."
+            echo "非指定時段，執行美股掃描任務..."
             python main.py
           fi
