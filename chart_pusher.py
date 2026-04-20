@@ -6,38 +6,46 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 def get_retail_chart():
+    print("🚀 啟動截圖程式...")
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--window-size=1920,1080') # 設定大視窗好定位
+    chrome_options.add_argument('--window-size=1200,1000')
 
     driver = webdriver.Chrome(options=chrome_options)
     
     try:
-        # 1. 前往網頁
-        driver.get("https://www.wantgoo.com/futures/retail-indicator/wtm&")
-        time.sleep(5) # 等待 JavaScript 渲染圖表
+        url = "https://www.wantgoo.com/futures/retail-indicator/wtm&"
+        print(f"🌐 正在打開網頁: {url}")
+        driver.get(url)
+        time.sleep(10) # 增加等待時間，確保圖表跑出來
 
-        # 2. 定位圖表區塊 (這部分根據玩股網結構微調)
-        # 我們直接對整頁截圖，或是針對特定的 canvas/div
-        element = driver.find_element(By.ID, "chart-canvas") # 這是常見的圖表 ID
-        element.screenshot("retail_chart.png")
+        print("📸 正在進行全螢幕截圖...")
+        driver.save_screenshot("debug_full.png") # 先存一張全圖備查
         
         # 3. 傳送至 LINE
         token = os.getenv('LINE_ACCESS_TOKEN')
-        url = "https://notify-api.line.me/api/notify"
+        if not token:
+            print("❌ 錯誤: 找不到 LINE_ACCESS_TOKEN，請檢查 GitHub Secrets 設定")
+            return
+
+        print("📤 正在傳送至 LINE Notify...")
+        notify_url = "https://notify-api.line.me/api/notify"
         headers = {"Authorization": f"Bearer {token}"}
-        payload = {"message": "\n📊 今日微台指散戶多空比圖表"}
-        files = {"imageFile": open("retail_chart.png", "rb")}
+        payload = {"message": "\n📊 微台指多空比測試"}
+        files = {"imageFile": open("debug_full.png", "rb")}
         
-        r = requests.post(url, headers=headers, params=payload, files=files)
-        print("LINE Notify Status:", r.status_code)
+        r = requests.post(notify_url, headers=headers, params=payload, files=files)
+        print(f"✅ LINE 回傳狀態碼: {r.status_code}")
+        if r.status_code != 200:
+            print(f"❌ LINE 傳送失敗，原因: {r.text}")
 
     except Exception as e:
-        print(f"發生錯誤: {e}")
+        print(f"🔥 發生嚴重錯誤: {e}")
     finally:
         driver.quit()
+        print("🏁 程式結束")
 
 if __name__ == "__main__":
     get_retail_chart()
