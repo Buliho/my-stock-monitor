@@ -1,29 +1,28 @@
-# 修改 chart_pusher.py 傳送區塊
-def get_retail_chart():
-    # ... 前面的截圖代碼保持不變 ...
-    
-    token = os.getenv('LINE_ACCESS_TOKEN')
-    if not token:
-        print("❌ 錯誤：找不到 LINE_ACCESS_TOKEN")
-        return
+import os
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-    print("📤 傳送至 LINE Notify...")
-    notify_url = "https://notify-api.line.me/api/notify"
-    
-    # 確保 Token 前後的空格正確
+def send_to_line(image_path):
+    token = os.getenv('LINE_ACCESS_TOKEN')
+    url = "https://notify-api.line.me/api/notify"
     headers = {"Authorization": f"Bearer {token}"}
     payload = {"message": "\n📊 微台指散戶多空比即時測試"}
     
+    # 建立重試機制，對抗暫時性的 DNS 錯誤
+    session = requests.Session()
+    retries = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    
     try:
-        # 加入 timeout 避免無限等待，並讀取圖片
-        with open("retail_chart.png", "rb") as f:
+        with open(image_path, "rb") as f:
             files = {"imageFile": f}
-            r = requests.post(notify_url, headers=headers, data=payload, files=files, timeout=30)
+            # 增加 timeout 並執行發送
+            r = session.post(url, headers=headers, params=payload, files=files, timeout=30)
         
         if r.status_code == 200:
             print("✅ LINE 傳送成功！")
         else:
             print(f"❌ LINE 傳送失敗，狀態碼: {r.status_code}, 內容: {r.text}")
-            
     except Exception as e:
-        print(f"🔥 發送過程發生錯誤: {e}")
+        print(f"🔥 連線失敗: {e}")
