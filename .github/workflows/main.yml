@@ -2,14 +2,13 @@ name: Daily Stock Monitor
 
 on:
   schedule:
-    # 台灣清晨 05:00 (美股收盤訊號)
-    - cron: '32 0 * * *'
-    # 台灣下午 16:00 (抓取台股多空比圖表) -> UTC 08:00
-    - cron: '32 0 * * *'
-  workflow_dispatch: # 允許您在 Actions 頁面手動點擊 Run workflow 測試
+    # 台灣上午 08:32 (UTC 00:32)
+    - cron: '41 0 * * *'
+    # 台灣下午 16:00 (UTC 08:00)
+    - cron: '0 8 * * *'
+  workflow_dispatch: 
 
 env:
-  # 解決 Node.js 版本過時警告
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -26,25 +25,22 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # 1. 更新系統並安裝 Chrome 執行所需的底層組件，避免 Selenium 崩潰
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 libgbm1
-          
-          # 2. 安裝 Python 套件
-          pip install -r requirements.txt
-          pip install selenium webdriver-manager requests
+          pip install requests selenium webdriver-manager
 
       - name: Run Appropriate Script
         env:
-          # 請確保 GitHub Secrets 裡的名稱完全符合 LINE_ACCESS_TOKEN
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          # 取得目前 UTC 小時數來判斷要跑哪一個程式
+          # 取得目前 UTC 小時
           HOUR=$(date +%H)
-          if [ "$HOUR" -eq "08" ]; then
-            echo "目前為台灣下午時段，啟動台股籌碼抓圖任務..."
+          
+          # 修正判斷邏輯：加入 00 點 (台灣早上 08:00) 的判斷
+          if [ "$HOUR" -eq "00" ] || [ "$HOUR" -eq "08" ]; then
+            echo "目前時段符合，啟動台股籌碼抓圖任務..."
             python chart_pusher.py
           else
-            echo "目前為清晨時段，啟動美股掃描任務..."
+            echo "目前為清晨或其他時段，執行美股掃描任務..."
             python main.py
           fi
