@@ -6,9 +6,10 @@ on:
     - cron: '32 0 * * *'
     # 台灣下午 16:00 (UTC 08:00)
     - cron: '0 8 * * *'
-  workflow_dispatch: 
+  workflow_dispatch: # 允許手動按鈕執行
 
 env:
+  # 解決 Node.js 版本警告問題
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -25,22 +26,27 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # 1. 安裝 Chrome 執行所需的底層組件，避免截圖程式閃退
           sudo apt-get update
           sudo apt-get install -y libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 libgbm1
+          
+          # 2. 安裝 Python 套件
           pip install requests selenium webdriver-manager
 
       - name: Run Appropriate Script
         env:
+          # 確認 GitHub Secrets 裡的名稱完全符合
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          # 取得目前 UTC 小時
+          # 取得目前 UTC 小時數
           HOUR=$(date +%H)
+          echo "目前的 UTC 小時為: $HOUR"
           
-          # 修正判斷邏輯：加入 00 點 (台灣早上 08:00) 的判斷
+          # 修正後的邏輯：如果是 UTC 00點 (台股早盤前) 或 UTC 08點 (台股收盤後)
           if [ "$HOUR" -eq "00" ] || [ "$HOUR" -eq "08" ]; then
-            echo "目前時段符合，啟動台股籌碼抓圖任務..."
+            echo "符合預設時段，啟動台股籌碼抓圖任務..."
             python chart_pusher.py
           else
-            echo "目前為清晨或其他時段，執行美股掃描任務..."
+            echo "非特定時段，執行美股掃描任務..."
             python main.py
           fi
