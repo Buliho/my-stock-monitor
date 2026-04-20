@@ -13,52 +13,31 @@ async def main():
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
-            viewport={"width": 1600, "height": 1200},
+            viewport={"width": 1680, "height": 1200},
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
         )
         page = await context.new_page()
         
         print("🌐 正在開啟 wantgoo 微台指散戶多空比頁面...")
         
-        # 1. 先用較寬鬆的方式載入頁面
-        await page.goto(URL, wait_until="domcontentloaded", timeout=90000)
-        await page.wait_for_load_state("load", timeout=60000)
+        # 使用最寬鬆的載入方式
+        await page.goto(URL, wait_until="domcontentloaded", timeout=120000)
+        await page.wait_for_load_state("load", timeout=90000)
         
-        print("📊 等待圖表區域載入...")
+        print("⏳ 等待頁面完全穩定與圖表繪製...")
+        # 給予足夠時間讓 Highcharts 動態繪製柱狀圖與藍線
+        await asyncio.sleep(12)
         
-        # 2. 多種 selector 嘗試（依優先順序）
-        selectors = [
-            '.highcharts-container',           # 最常見的 Highcharts
-            'canvas',                          # 如果是 canvas 繪製
-            'svg',                             # 如果是 SVG
-            '[id*="chart"]',                   # 包含 chart 的元素
-            'text=微台指散戶多空比',           # 文字定位
-        ]
+        # === 最可靠的截圖方式：只截取中間主要內容區域（避開 header/footer）===
+        print("📸 開始截取圖表...")
         
-        chart_locator = None
-        for sel in selectors:
-            try:
-                print(f"嘗試 selector: {sel}")
-                await page.wait_for_selector(sel, timeout=15000)
-                chart_locator = page.locator(sel).first
-                if await chart_locator.is_visible():
-                    print(f"✅ 找到圖表：{sel}")
-                    break
-            except:
-                continue
+        # 方式1：截取整個可視視窗（最穩，圖表會在中央）
+        await page.screenshot(path=IMAGE_PATH, full_page=False)
         
-        # 3. 如果還是沒找到，就用比較大的區域（包含標題）
-        if not chart_locator or not await chart_locator.is_visible():
-            print("⚠️ 無法精準找到圖表容器，改用較大區域截圖...")
-            chart_locator = page.locator('body').locator('div:has-text("微台指散戶多空比")').first
+        # 如果你想更乾淨，可以試下面這行（取消註解取代上面一行）：
+        # await page.locator('main, .container, article').first.screenshot(path=IMAGE_PATH)  # 視情況
         
-        # 4. 額外等待讓柱狀圖與藍線完全繪製
-        await asyncio.sleep(10)
-        
-        # 截圖
-        await chart_locator.screenshot(path=IMAGE_PATH)
-        print(f"✅ 圖表截取完成 → {IMAGE_PATH}")
-        
+        print(f"✅ 截圖完成 → {IMAGE_PATH}")
         await browser.close()
 
 def send_to_line(image_path: str):
