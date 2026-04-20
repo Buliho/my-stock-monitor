@@ -3,9 +3,9 @@ name: Daily Stock Monitor
 on:
   schedule:
     # 台灣清晨 05:00 (美股收盤訊號)
-    - cron: '0 21 * * *'
+    - cron: '32 0 * * *'
     # 台灣下午 16:00 (抓取台股多空比圖表) -> UTC 08:00
-    - cron: '0 8 * * *'
+    - cron: '32 0 * * *'
   workflow_dispatch: # 允許您在 Actions 頁面手動點擊 Run workflow 測試
 
 env:
