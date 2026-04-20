@@ -3,10 +3,10 @@ name: Daily Stock Monitor
 on:
   schedule:
     # 台灣上午 08:32 (UTC 00:32)
-    - cron: '41 0 * * *'
+    - cron: '32 0 * * *'
     # 台灣下午 16:00 (UTC 08:00)
     - cron: '0 8 * * *'
-  workflow_dispatch:
+  workflow_dispatch: 
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -23,15 +23,9 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Chrome browser  # <-- 新增這個 step
-        run: |
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install -y libnss3 libatk-bridge2.0-0 libxcomposite1 libxdamage1 libxrandr2 libgbm1
           pip install requests selenium webdriver-manager
 
@@ -39,12 +33,14 @@ jobs:
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
+          # 取得目前 UTC 小時
           HOUR=$(date +%H)
-
+          
+          # 修正判斷邏輯：加入 00 點 (台灣早上 08:00) 的判斷
           if [ "$HOUR" -eq "00" ] || [ "$HOUR" -eq "08" ]; then
-            echo "目前時段符合，啟動台股零碎抓圖任務..."
+            echo "目前時段符合，啟動台股籌碼抓圖任務..."
             python chart_pusher.py
           else
-            echo "目前為滿震或其他時段，執行關股掃描任務..."
+            echo "目前為清晨或其他時段，執行美股掃描任務..."
             python main.py
           fi
