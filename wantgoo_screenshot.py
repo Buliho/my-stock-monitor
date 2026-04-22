@@ -5,7 +5,7 @@ from playwright.async_api import async_playwright
 import requests
 
 # === 你的設定（改成 Telegram）===
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")      # GitHub Secrets 新增這個
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")      # GitHub Secrets 新增這個
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")  # GitHub Secrets 新增這個
 URL = "https://www.wantgoo.com/futures/retail-indicator/wtm"
 IMAGE_PATH = "micro_futures_retail_ratio.png"
