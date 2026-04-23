@@ -2,11 +2,17 @@ name: Daily Stock Monitor
 
 on:
   schedule:
-    # 台灣清晨 05:32 (UTC 21:32) - 接收美股盤後數據
+    # 1. 台灣清晨 05:32 (UTC 21:32) - 接收美股盤後數據
     - cron: '32 21 * * *'
-    # 台灣下午 16:00 (UTC 08:00) - 接收美股盤前/數據更新 + 截圖
+    
+    # 2. 台灣下午 16:00 (UTC 08:00) - 原本的數據更新提醒
     - cron: '0 8 * * *'
-  workflow_dispatch:        # 允許手動測試
+    
+    # 3. 盤中即時監控：每 30 分鐘執行一次
+    # 美股夏令時間盤中約為 UTC 13:30 - 20:00 (週一至週五)
+    - cron: '*/30 14-20 * * 1-5'
+    
+  workflow_dispatch: # 允許手動點擊執行測試
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -27,21 +33,16 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install requests yfinance pandas pandas_ta playwright
-          playwright install chromium --with-deps
+          # 移除了 playwright，只安裝數據分析需要的套件
+          pip install requests yfinance pandas pandas_ta
 
       - name: Run Stock Monitor (原本的數字提醒)
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: python main.py
 
-
-      - name: 每日下午四點截取微台指散戶多空比圖表
+      - name: 執行族群動態監控 (類比IC車用)
+        # 此步驟負責監控 TXN, STM, ON 五天漲15% 或 盤中漲5%
         env:
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python macromicro_screenshot.py
-
-
-
+        run: python stock_group_monitor.py
