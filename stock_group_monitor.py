@@ -9,12 +9,29 @@ GROUPS = {
     "類比IC車用": ["TXN", "STM", "ON"]
 }
 
-def send_line(msg):
-    if not LINE_TOKEN: return
-    url = "https://notify-api.line.me/api/notify"
-    headers = {"Authorization": "Bearer " + LINE_TOKEN}
-    requests.post(url, headers=headers, data={"message": msg})
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
+def send_line(msg):
+    url = 'https://notify-api.line.me/api/notify'
+    headers = {'Authorization': 'Bearer ' + '你的TOKEN'}
+    
+    # 設定重試策略
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=5,              # 總共重試 5 次
+        backoff_factor=1,     # 每次重試間隔時間遞增 (1s, 2s, 4s...)
+        status_forcelist=[429, 500, 502, 503, 504], # 遇到這些狀態碼才重試
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("https://", adapter)
+    
+    try:
+        response = session.post(url, headers=headers, data={'message': msg}, timeout=10)
+        return response
+    except Exception as e:
+        print(f"LINE通知發送失敗: {e}")
 def monitor():
     for group_name, tickers in GROUPS.items():
         # 抓取近期數據 (為了算5天漲幅，抓7天比較保險)
