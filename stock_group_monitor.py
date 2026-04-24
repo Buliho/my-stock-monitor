@@ -12,6 +12,7 @@ GROUPS = {
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import time
 
 def send_line(msg):
     url = 'https://notify-api.line.me/api/notify'
@@ -32,6 +33,7 @@ def send_line(msg):
         return response
     except Exception as e:
         print(f"LINE通知發送失敗: {e}")
+        time.sleep(5)  # 給 DNS 一點緩衝時間
 def monitor():
     for group_name, tickers in GROUPS.items():
         # 抓取近期數據 (為了算5天漲幅，抓7天比較保險)
