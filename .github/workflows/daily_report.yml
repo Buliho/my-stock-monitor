@@ -1,10 +1,14 @@
-name: Daily Winbond Margin Notify
+name: Daily Margin Notify
 
 on:
   schedule:
-    # 每天下午 5:00 執行 (台北時間 UTC+8，故設定 UTC 09:00)
-    - cron: '0 9 * * 1-5'
-  workflow_dispatch: # 允許您在 Actions 頁面手動點擊執行測試
+    - cron: '0 9 * * 1-5' # 台北時間 17:00
+  workflow_dispatch:
+
+# 將 env 放在這裡，這樣整個檔案的步驟都能讀到 Token
+env:
+  LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+  LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
 
 jobs:
   build:
@@ -19,11 +23,8 @@ jobs:
           python-version: '3.9'
 
       - name: Install dependencies
-        run: |
-          pip install requests beautifulsoup4
+        run: pip install requests beautifulsoup4
 
       - name: Run Margin Notify Script
-        env:
-          # 這裡必須與您 GitHub Secrets 裡設定的名稱完全一致
-          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        # 因為上面已經定義了 Global env，這裡不需要再重複寫 env
         run: python margin_notify.py
