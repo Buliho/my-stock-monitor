@@ -4,7 +4,7 @@ on:
   schedule:
     # 1. 台灣清晨 05:32 (UTC 21:32) - 執行美股收盤後數據 (main.py)
     - cron: '32 21 * * *'
-    
+
     # 2. 美股盤中監控：每小時整點執行一次 (UTC 14:00 - 20:00，週一至週五)
     # 對應台灣時間約為 22:00 - 04:00
     - cron: '0 14-20 * * 1-5'
@@ -13,7 +13,9 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # 同時提供兩組 Token，確保新舊腳本都能相容
   LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+  LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
 
 jobs:
   build:
