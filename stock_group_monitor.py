@@ -51,7 +51,7 @@ def monitor():
         lookback = 5
         pct_change_5d = (data.iloc[-1] / data.iloc[-lookback]) - 1
         
-        all_hit_15pct = all(pct_change_5d >= 0.02)
+        all_hit_15pct = all(pct_change_5d >= 0)
         if all_hit_15pct:
             msg = f"\n🔥 族群爆發預警：{group_name}\n"
             msg += f"名單：{', '.join(tickers)}\n"
