@@ -63,9 +63,9 @@ def get_margin_data(stock_no):
         return None
 
 def send_line(msg):
-    token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
+    token = os.environ.get('LINE_ACCESS_TOKEN', '').strip()
     if not token:
-        print("未偵測到 LINE_CHANNEL_ACCESS_TOKEN")
+        print("未偵測到 LINE_ACCESS_TOKEN")
         return
     
     url = 'https://api.line.me/v2/bot/message/broadcast'
