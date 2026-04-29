@@ -41,19 +41,39 @@ def get_margin_data(stock_no):
     except Exception as e:
         return f"爬取失敗: {str(e)}"
 
+#--------------------------------------------------------------------
+
 def send_line(msg):
-    token = os.getenv('LINE_TOKEN') # 從 Github Secrets 讀取
+    # 讀取原本的 Secrets 名稱
+    token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
     if not token:
-        print("Error: LINE_TOKEN not found")
+        print("Error: LINE_CHANNEL_ACCESS_TOKEN not found")
         return
     
-    url = "https://notify-api.line.me/api/notify"
-    headers = {"Authorization": f"Bearer {token}"}
-    data = {"message": msg}
-    requests.post(url, headers=headers, data=data)
-
-if __name__ == "__main__":
-    # 預設抓取華邦電 2344
-    target_msg = get_margin_data("2344")
-    print(target_msg)
-    send_line(target_msg)
+    # 使用 Messaging API 的 Broadcast 網址
+    url = 'https://api.line.me/v2/bot/message/broadcast'
+    
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
+    
+    # 符合 Messaging API 規範的 JSON 格式
+    payload = {
+        'messages': [
+            {
+                'type': 'text',
+                'text': msg
+            }
+        ]
+    }
+    
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.status_code == 200:
+            print("LINE 訊息發送成功")
+        else:
+            print(f"LINE 發送失敗，狀態碼：{response.status_code}, 原因：{response.text}")
+        return response
+    except Exception as e:
+        print(f"發送過程發生錯誤: {e}")
