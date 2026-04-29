@@ -10,44 +10,33 @@ GROUPS = {
 }
 
 #---------------SEND LINE-----------------
-
 import os
 import requests
 
 def send_line(msg):
-    # 這裡的變數名稱請確保與 main.yml 裡的 LINE_CHANNEL_ACCESS_TOKEN 一致
+    # 這是最關鍵的一行：從系統讀取密鑰 (請確認名稱與 YAML 裡的 env 一致)
     token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
     
-    # 統一使用 Messaging API 的廣播網址
     url = 'https://api.line.me/v2/bot/message/broadcast'
     
+    # 這裡的寫法現在跟 main.py 前半段一模一樣了
     headers = {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json', 
         'Authorization': f'Bearer {token}'
     }
-
-    # 統一使用 JSON 格式
+    
     payload = {
         'messages': [
             {
-                'type': 'text',
+                'type': 'text', 
                 'text': msg
             }
         ]
     }
-
-    try:
-        # 跟 main.py 一樣使用 json=payload
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        
-        if response.status_code == 200:
-            print("機器人報告發送成功！")
-        else:
-            print(f"發送失敗，狀態碼：{response.status_code}")
-            print(f"錯誤原因：{response.text}")
-        return response
-    except Exception as e:
-        print(f"連線異常: {e}")
+    
+    # 這裡也跟 main.py 一樣使用 json=payload
+    response = requests.post(url, json=payload, headers=headers)
+    return response
 
 
 #--------------------------------------------------------------------------------
