@@ -1,4 +1,4 @@
-name: Daily Winbond Margin Notify
+name: Daily Margin Notify
 
 on:
   schedule:
