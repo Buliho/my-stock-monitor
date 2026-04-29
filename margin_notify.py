@@ -1,8 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 import os
+import sys
 
 def get_margin_data(stock_no):
+    print(f"正在抓取股票代碼: {stock_no}...")
     url = f"https://histock.tw/stock/chips.aspx?no={stock_no}&m=mg"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -10,25 +12,33 @@ def get_margin_data(stock_no):
 
     try:
         response = requests.get(url, headers=headers)
-        response.raise_for_status()
+        print(f"網頁回應狀態碼: {response.status_code}")
+        
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        # 找到表格中第一行數據 (排除表頭)
+        # 嘗試尋找表格
         table = soup.find('table', class_='gvSummary')
         if not table:
-            return "找不到數據表格"
+            print("警告：找不到 class 為 gvSummary 的表格")
+            return None
 
         rows = table.find_all('tr')
-        if len(rows) < 2:
-            return "數據尚未更新"
+        print(f"找到表格行數: {len(rows)}")
 
-        # 第一列通常是最新日期
+        if len(rows) < 2:
+            print("警告：表格中沒有足夠的數據行")
+            return None
+
+        # 抓取第一行數據
         cols = rows[1].find_all('td')
+        if len(cols) < 4:
+            print(f"警告：資料列欄位不足 (僅有 {len(cols)} 欄)")
+            return None
         
-        date = cols[0].text.strip()           # 日期
-        margin_add = cols[1].text.strip()      # 融資增加
-        margin_balance = cols[2].text.strip()  # 融資餘額
-        margin_usage = cols[3].text.strip()    # 融資使用率%
+        date = cols[0].text.strip()
+        margin_add = cols[1].text.strip()
+        margin_balance = cols[2].text.strip()
+        margin_usage = cols[3].text.strip()
 
         msg = f"\n【{stock_no} 融資監控】\n"
         msg += f"日期：{date}\n"
@@ -36,44 +46,37 @@ def get_margin_data(stock_no):
         msg += f"融資餘額：{margin_balance} 張\n"
         msg += f"使用率：{margin_usage}%"
         
+        print("成功解析數據內容！")
         return msg
 
     except Exception as e:
-        return f"爬取失敗: {str(e)}"
-
-#--------------------------------------------------------------------
+        print(f"發生異常錯誤: {str(e)}")
+        return None
 
 def send_line(msg):
-    # 讀取原本的 Secrets 名稱
     token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN', '').strip()
     if not token:
-        print("Error: LINE_CHANNEL_ACCESS_TOKEN not found")
+        print("錯誤：找不到 LINE_CHANNEL_ACCESS_TOKEN 密鑰")
         return
     
-    # 使用 Messaging API 的 Broadcast 網址
+    print(f"準備發送 LINE 訊息，Token 長度: {len(token)}")
     url = 'https://api.line.me/v2/bot/message/broadcast'
-    
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {token}'
     }
-    
-    # 符合 Messaging API 規範的 JSON 格式
     payload = {
-        'messages': [
-            {
-                'type': 'text',
-                'text': msg
-            }
-        ]
+        'messages': [{'type': 'text', 'text': msg}]
     }
     
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-        if response.status_code == 200:
-            print("LINE 訊息發送成功")
-        else:
-            print(f"LINE 發送失敗，狀態碼：{response.status_code}, 原因：{response.text}")
-        return response
-    except Exception as e:
-        print(f"發送過程發生錯誤: {e}")
+    res = requests.post(url, json=payload, headers=headers)
+    print(f"LINE API 回應狀態碼: {res.status_code}")
+    print(f"回應內容: {res.text}")
+
+if __name__ == "__main__":
+    result = get_margin_data("2344")
+    if result:
+        print(result)
+        send_line(result)
+    else:
+        print("最終結果為空，不執行發送。")
