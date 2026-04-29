@@ -9,16 +9,15 @@ GROUPS = {
     "類比IC車用": ["TXN", "STM", "ON"]
 }
 
-
+#---------------SEND LINE-----------------
 import os
-import json
 import requests
 
 def send_line(msg):
-    # 1. 抓取機器人的 Channel Access Token (跟 main.py 用同一個)
+    # 這裡的變數名稱一定要跟您 GitHub Action YAML 裡的名稱完全一致
+    # 建議直接改用您 main.py 成功的那個變數名
     token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
     
-    # 2. 機器人發送廣播的 URL
     url = 'https://api.line.me/v2/bot/message/broadcast'
     
     headers = {
@@ -26,7 +25,7 @@ def send_line(msg):
         'Authorization': f'Bearer {token}'
     }
 
-    # 3. 機器人的資料格式是 JSON (這就是 main.py 的格式)
+    # 機器人模式：必須封裝成 messages 列表中的 JSON 格式
     payload = {
         'messages': [
             {
@@ -37,18 +36,19 @@ def send_line(msg):
     }
 
     try:
-        # 注意：這裡改回 json=payload，因為機器人吃 JSON
+        # 注意：這裡必須用 json=payload，這點跟 Notify 不同
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         
         if response.status_code == 200:
-            print("機器人廣播成功！")
+            print("機器人報告發送成功！")
         else:
             print(f"發送失敗，代碼：{response.status_code}，原因：{response.text}")
         return response
     except Exception as e:
-        print(f"機器人連線失敗: {e}")
+        print(f"連線異常: {e}")
 
 
+#--------------------------------------------------------------------------------
 
 def monitor():
     for group_name, tickers in GROUPS.items():
