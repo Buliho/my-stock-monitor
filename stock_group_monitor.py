@@ -9,31 +9,40 @@ GROUPS = {
     "類比IC車用": ["TXN", "STM", "ON"]
 }
 
+import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import time
 
 def send_line(msg):
-    url = 'https://notify-api.line.me/api/notify'
-    headers = {'Authorization': 'Bearer ' + '你的TOKEN'}
+    # 從環境變數讀取 Token，這要跟 YAML 裡的 env 名稱一致
+    token = os.environ.get('LINE_ACCESS_TOKEN')
     
-    # 設定重試策略
+    url = 'https://notify-api.line.me/api/notify'
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    # 設定重試策略 (處理您之前遇到的 NameResolutionError)
     session = requests.Session()
     retry_strategy = Retry(
-        total=5,              # 總共重試 5 次
-        backoff_factor=1,     # 每次重試間隔時間遞增 (1s, 2s, 4s...)
-        status_forcelist=[429, 500, 502, 503, 504], # 遇到這些狀態碼才重試
+        total=5,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504]
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
     session.mount("https://", adapter)
-    
+
     try:
+        # LINE Notify 必須用 data= 而不是 json=
         response = session.post(url, headers=headers, data={'message': msg}, timeout=10)
         return response
     except Exception as e:
         print(f"LINE通知發送失敗: {e}")
-        time.sleep(5)  # 給 DNS 一點緩衝時間
+
+
+
 def monitor():
     for group_name, tickers in GROUPS.items():
         # 抓取近期數據 (為了算5天漲幅，抓7天比較保險)
