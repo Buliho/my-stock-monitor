@@ -9,37 +9,44 @@ GROUPS = {
     "類比IC車用": ["TXN", "STM", "ON"]
 }
 
+
 import os
+import json
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 def send_line(msg):
-    # 從環境變數讀取 Token，這要跟 YAML 裡的 env 名稱一致
-    token = os.environ.get('LINE_ACCESS_TOKEN')
+    # 1. 抓取機器人的 Channel Access Token (跟 main.py 用同一個)
+    token = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
     
-    url = 'https://notify-api.line.me/api/notify'
+    # 2. 機器人發送廣播的 URL
+    url = 'https://api.line.me/v2/bot/message/broadcast'
+    
     headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token}'
     }
 
-    # 設定重試策略 (處理您之前遇到的 NameResolutionError)
-    session = requests.Session()
-    retry_strategy = Retry(
-        total=5,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504]
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("https://", adapter)
+    # 3. 機器人的資料格式是 JSON (這就是 main.py 的格式)
+    payload = {
+        'messages': [
+            {
+                'type': 'text',
+                'text': msg
+            }
+        ]
+    }
 
     try:
-        # LINE Notify 必須用 data= 而不是 json=
-        response = session.post(url, headers=headers, data={'message': msg}, timeout=10)
+        # 注意：這裡改回 json=payload，因為機器人吃 JSON
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            print("機器人廣播成功！")
+        else:
+            print(f"發送失敗，代碼：{response.status_code}，原因：{response.text}")
         return response
     except Exception as e:
-        print(f"LINE通知發送失敗: {e}")
+        print(f"機器人連線失敗: {e}")
 
 
 
