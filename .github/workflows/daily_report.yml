@@ -1,13 +1,13 @@
-name: Daily Margin Notify
+name: Daily Winbond Margin Notify
 
 on:
   schedule:
-    - cron: '0 9 * * 1-5' # 台北時間 17:00
+    # 台北時間 17:00 (UTC 09:00)
+    - cron: '0 9 * * 1-5'
   workflow_dispatch:
 
-# 將 env 放在這裡，這樣整個檔案的步驟都能讀到 Token
+# 設定全域環境變數，讓 Python 腳本能讀到 Token
 env:
-  LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
   LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
 
 jobs:
@@ -26,5 +26,4 @@ jobs:
         run: pip install requests beautifulsoup4
 
       - name: Run Margin Notify Script
-        # 因為上面已經定義了 Global env，這裡不需要再重複寫 env
         run: python margin_notify.py
