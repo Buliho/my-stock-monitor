@@ -13,7 +13,7 @@ LINE_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 # 2. 你的類 ETF 名單
 stocks = ["LEU", "NVT", "GEV", "BWXT", "POWL", "VICR", "OKLO", "CCJ","VRT","CRDO","ALAB","ASTS"]
 
-tickers = ["LEU","OKLO","GEV","BWXT","UUUU","ASTS"]
+tickers = ["LEU","OKLO","GEV","BWXT","UUUU","ASTS","HIMX"]
 
 def get_signals():
     buy_list = []
