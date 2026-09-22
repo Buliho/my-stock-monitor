@@ -79,7 +79,7 @@ def send_line(msg):
     print(f"LINE 回應狀態碼: {res.status_code}")
 
 if __name__ == "__main__":
-    content = get_margin_data("2344")
+    content = get_margin_data("2449")
     if content:
         print(content)
         send_line(content)
