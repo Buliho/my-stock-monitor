@@ -11,9 +11,9 @@ import pandas_ta as ta
 LINE_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 
 # 2. 你的類 ETF 名單
-stocks = ["TSLA","SPCX","CRWD","PANW","CRDO","ALAB","ASTS"]
+stocks = ["TSLA","SPCX","CRWD","PANW","CRDO","ALAB","INTC","AMD"]
 
-tickers = ["LEU","OKLO","GEV","BWXT","UUUU","ASTS","HIMX"]
+tickers = ["TSLA","CRWD","PANW","AMD"]
 
 def get_signals():
     buy_list = []
