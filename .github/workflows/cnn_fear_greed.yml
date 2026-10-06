@@ -1,0 +1,35 @@
+```yaml
+name: CNN Fear & Greed Daily
+
+on:
+  schedule:
+    # UTC 23:00 = 台灣時間 07:00
+    - cron: "0 23 * * 1-5"
+
+  workflow_dispatch:
+
+jobs:
+  fear-greed:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install requests
+        run: |
+          pip install requests
+
+      - name: Run CNN Fear & Greed
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: |
+          python cnn_fear_greed.py
+```
