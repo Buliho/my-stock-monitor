@@ -1,4 +1,4 @@
-```python
+
 import os
 import requests
 from datetime import datetime, timezone
@@ -209,4 +209,4 @@ except Exception as e:
         send_line(error_message)
     except Exception as line_error:
         print("LINE 錯誤通知也失敗:", line_error)
-```
+
